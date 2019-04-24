@@ -16,11 +16,16 @@ class PPOAlgo(BaseAlgo):
         num_frames_per_proc = num_frames_per_proc or 128
 
         super().__init__(envs, acmodel, num_frames_per_proc, discount, lr, gae_lambda, entropy_coef,
-                         value_loss_coef, max_grad_norm, recurrence, preprocess_obss, reshape_reward, KLweight, useKL,stateIndexDict,SSRepDem)
+                         value_loss_coef, max_grad_norm, recurrence, preprocess_obss, reshape_reward, useKL,KLweight,stateIndexDict,SSRepDem)
 
         self.clip_eps = clip_eps
         self.epochs = epochs
         self.batch_size = batch_size
+        #self.useKL=useKL
+        #self.stateIndexDict = stateIndexDict
+        #self.KLweight = KLweight
+        #self.SSRepDem = SSRepDem
+
 
         assert self.batch_size % self.recurrence == 0
 
@@ -76,12 +81,12 @@ class PPOAlgo(BaseAlgo):
                     surr1 = (value - sb.returnn).pow(2)
                     surr2 = (value_clipped - sb.returnn).pow(2)
                     value_loss = torch.max(surr1, surr2).mean()
-                    if useKL==False:
+                    if self.useKL==False:
                         loss = policy_loss - self.entropy_coef * entropy + self.value_loss_coef * value_loss
-                    if useKL==True:
-                        SSRepPolicy=getSSRepFromPolicy(dist,stateIndexDict)
-                        KLTerm=mutual_info_score(SSRepDem,SSRepPolicy)
-                        loss = policy_loss + KLweight * (KLTerm) - self.entropy_coef * entropy + self.value_loss_coef * value_loss
+                    if self.useKL==True:
+                        SSRepPolicy=getSSRepFromPolicy(dist,self.stateIndexDict)
+                        KLTerm=mutual_info_score(self.SSRepDem,SSRepPolicy)
+                        loss = policy_loss + self.KLweight * (KLTerm) - self.entropy_coef * entropy + self.value_loss_coef * value_loss
 
                     # Update batch values
 
