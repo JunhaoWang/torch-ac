@@ -217,6 +217,7 @@ class BaseAlgo(ABC):
         exps.advantage = self.advantages.transpose(0, 1).reshape(-1)
         exps.returnn = exps.value + exps.advantage
         exps.log_prob = self.log_probs.transpose(0, 1).reshape(-1)
+        #exps.traj_length=
 
         # Preprocess experiences
 

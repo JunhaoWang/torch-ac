@@ -32,7 +32,7 @@ class PPOAlgo(BaseAlgo):
         self.optimizer = torch.optim.Adam(self.acmodel.parameters(), lr, eps=adam_eps)
         self.batch_num = 0
 
-    def update_parameters(self, exps):
+    def update_parameters(self, exps, stateOccupancyList):
         # Collect experiences
 
         for _ in range(self.epochs):
@@ -83,8 +83,8 @@ class PPOAlgo(BaseAlgo):
                     value_loss = torch.max(surr1, surr2).mean()
                     if self.useKL==False:
                         loss = policy_loss - self.entropy_coef * entropy + self.value_loss_coef * value_loss
-                    if self.useKL==True:
-                        SSRepPolicy=getSSRepFromPolicy(dist,self.stateIndexDict)
+                    elif self.useKL==True:
+                        SSRepPolicy=stateOccupancyList
                         KLTerm=mutual_info_score(self.SSRepDem,SSRepPolicy)
                         loss = policy_loss + self.KLweight * (KLTerm) - self.entropy_coef * entropy + self.value_loss_coef * value_loss
 
