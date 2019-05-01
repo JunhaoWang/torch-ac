@@ -4,6 +4,8 @@ import torch.nn.functional as F
 
 from sklearn.metrics import mutual_info_score
 from torch_ac.algos.base import BaseAlgo
+from scipy.stats import entropy
+import numpy as np
 
 class PPOAlgo(BaseAlgo):
     """The class for the Proximal Policy Optimization algorithm
@@ -31,6 +33,12 @@ class PPOAlgo(BaseAlgo):
 
         self.optimizer = torch.optim.Adam(self.acmodel.parameters(), lr, eps=adam_eps)
         self.batch_num = 0
+
+    def KL(self ,a, b):
+        a = np.asarray(a, dtype=np.float)
+        b = np.asarray(b, dtype=np.float)
+
+        return np.sum(np.where(a != 0, a * np.log(a / b), 0))
 
     def update_parameters(self, exps, stateOccupancyList):
         # Collect experiences
@@ -85,8 +93,10 @@ class PPOAlgo(BaseAlgo):
                         loss = policy_loss - self.entropy_coef * entropy + self.value_loss_coef * value_loss
                     elif self.useKL==True:
                         SSRepPolicy=stateOccupancyList
-                        KLTerm=mutual_info_score(self.SSRepDem,SSRepPolicy)
-                        loss = policy_loss + self.KLweight * (KLTerm) - self.entropy_coef * entropy + self.value_loss_coef * value_loss
+                        KLTerm=self.KL(np.array(self.SSRepDem),np.array(SSRepPolicy))
+                        print(KLTerm)
+                        loss = policy_loss - self.KLweight * (KLTerm) - self.entropy_coef * entropy + self.value_loss_coef * value_loss
+                        #loss = policy_loss  - self.entropy_coef * entropy + self.value_loss_coef * value_loss
 
                     # Update batch values
 
