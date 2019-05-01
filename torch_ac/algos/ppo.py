@@ -96,6 +96,8 @@ class PPOAlgo(BaseAlgo):
                         KLTerm=self.KL(np.array(self.SSRepDem),np.array(SSRepPolicy))
                         print(KLTerm)
                         loss = policy_loss - self.KLweight * (KLTerm) - self.entropy_coef * entropy + self.value_loss_coef * value_loss
+
+                        #print(loss)
                         #loss = policy_loss  - self.entropy_coef * entropy + self.value_loss_coef * value_loss
 
                     # Update batch values
@@ -125,6 +127,9 @@ class PPOAlgo(BaseAlgo):
                 batch_loss.backward()
                 grad_norm = sum(p.grad.data.norm(2).item() ** 2 for p in self.acmodel.parameters()) ** 0.5
                 torch.nn.utils.clip_grad_norm_(self.acmodel.parameters(), self.max_grad_norm)
+                if self.useKL==True:
+                    for p in self.acmodel.parameters():
+                        p.grad -= self.KLweight * KLTerm
                 self.optimizer.step()
 
                 # Update log values
