@@ -1,11 +1,13 @@
 import numpy
 import torch
 import torch.nn.functional as F
+import math
 
 from sklearn.metrics import mutual_info_score
 from torch_ac.algos.base import BaseAlgo
 from scipy.stats import entropy
 import numpy as np
+from random import randint
 
 class PPOAlgo(BaseAlgo):
     """The class for the Proximal Policy Optimization algorithm
@@ -40,7 +42,7 @@ class PPOAlgo(BaseAlgo):
 
         return np.sum(np.where(a != 0, a * np.log(a / b), 0))
 
-    def update_parameters(self, exps, stateOccupancyList):
+    def update_parameters(self, exps, stateOccupancyList, decay):
         # Collect experiences
 
         for _ in range(self.epochs):
@@ -90,17 +92,15 @@ class PPOAlgo(BaseAlgo):
                     surr2 = (value_clipped - sb.returnn).pow(2)
                     value_loss = torch.max(surr1, surr2).mean()
                     if self.useKL==False:
-                        loss = policy_loss - self.entropy_coef * entropy + self.value_loss_coef * value_loss
+                        loss = policy_loss - self.entropy_coef * entropy + self.value_loss_coef * value_loss + randint(0,100)
                     elif self.useKL==True:
                         SSRepPolicy=stateOccupancyList
                         KLTerm=self.KL(np.array(self.SSRepDem),np.array(SSRepPolicy))
-                        print(KLTerm)
-                        loss = policy_loss - self.KLweight * (KLTerm) - self.entropy_coef * entropy + self.value_loss_coef * value_loss
+                        KLloss = self.KLweight * (1/math.sqrt(decay)) * (KLTerm)
+                        KLloss = torch.tensor(KLloss, requires_grad=True)
+                        loss = policy_loss - KLloss - self.entropy_coef * entropy + self.value_loss_coef * value_loss
 
-                        #print(loss)
-                        #loss = policy_loss  - self.entropy_coef * entropy + self.value_loss_coef * value_loss
-
-                    # Update batch values
+                    # Update batch valuesgit
 
                     batch_entropy += entropy.item()
                     batch_value += value.mean().item()
@@ -121,15 +121,18 @@ class PPOAlgo(BaseAlgo):
                 batch_value_loss /= self.recurrence
                 batch_loss /= self.recurrence
 
+                #print("KL:" + str(self.KLweight * KLTerm * (1/math.sqrt(decay))))
+                #print("Policy Loss" + str(batch_policy_loss))
+                #print("Value Loss" + str(batch_value_loss))
+
                 # Update actor-critic
 
                 self.optimizer.zero_grad()
+
                 batch_loss.backward()
                 grad_norm = sum(p.grad.data.norm(2).item() ** 2 for p in self.acmodel.parameters()) ** 0.5
                 torch.nn.utils.clip_grad_norm_(self.acmodel.parameters(), self.max_grad_norm)
-                if self.useKL==True:
-                    for p in self.acmodel.parameters():
-                        p.grad -= self.KLweight * KLTerm
+
                 self.optimizer.step()
 
                 # Update log values
