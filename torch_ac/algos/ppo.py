@@ -96,9 +96,14 @@ class PPOAlgo(BaseAlgo):
                     elif self.useKL==True:
                         SSRepPolicy=stateOccupancyList
                         KLTerm=self.KL(np.array(self.SSRepDem),np.array(SSRepPolicy))
-                        KLloss = self.KLweight * (1/math.sqrt(decay)) * (KLTerm)
-                        KLloss = torch.tensor(KLloss, requires_grad=True)
-                        loss = policy_loss - KLloss - self.entropy_coef * entropy + self.value_loss_coef * value_loss
+                        KLTerm = torch.tensor(KLTerm, requires_grad=True)
+                        print("PL:" + str(policy_loss))
+                        print("VL:" + str(value_loss))
+                        KLloss = (KLTerm) #* (1/math.sqrt(decay))
+                        #KLloss = torch.tensor(KLloss, requires_grad=True)
+                        print("KL:" + str(KLloss))
+
+                        loss = policy_loss - self.KLweight * KLTerm - self.entropy_coef * entropy + self.value_loss_coef * value_loss
 
                     # Update batch valuesgit
 
