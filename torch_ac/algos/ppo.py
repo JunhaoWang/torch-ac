@@ -92,14 +92,14 @@ class PPOAlgo(BaseAlgo):
                     surr2 = (value_clipped - sb.returnn).pow(2)
                     value_loss = torch.max(surr1, surr2).mean()
                     if self.useKL==False:
-                        loss = policy_loss - self.entropy_coef * entropy + self.value_loss_coef * value_loss + randint(0,100)
+                        loss = policy_loss - self.entropy_coef * entropy + self.value_loss_coef * value_loss
                     elif self.useKL==True:
                         SSRepPolicy=stateOccupancyList
                         KLTerm=self.KL(np.array(self.SSRepDem),np.array(SSRepPolicy))
                         KLTerm = torch.tensor(KLTerm, requires_grad=True)
                         print("PL:" + str(policy_loss))
                         print("VL:" + str(value_loss))
-                        KLloss = (KLTerm) #* (1/math.sqrt(decay))
+                        KLloss = (KLTerm* self.KLweight) #* (1/math.sqrt(decay))
                         #KLloss = torch.tensor(KLloss, requires_grad=True)
                         print("KL:" + str(KLloss))
 
