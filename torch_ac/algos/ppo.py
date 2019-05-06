@@ -97,6 +97,8 @@ class PPOAlgo(BaseAlgo):
                         SSRepPolicy=stateOccupancyList
                         KLTerm=self.KL(np.array(self.SSRepDem),np.array(SSRepPolicy))
                         KLTerm = torch.tensor(KLTerm, requires_grad=True)
+                        device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
+                        KLTerm.to(device)
                         print("PL:" + str(policy_loss))
                         print("VL:" + str(value_loss))
                         KLloss = (KLTerm* self.KLweight) #* (1/math.sqrt(decay))
