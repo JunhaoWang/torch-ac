@@ -42,7 +42,7 @@ class PPOAlgo(BaseAlgo):
 
         return np.sum(np.where(a != 0, a * np.log(a / b), 0))
 
-    def update_parameters(self, exps, stateOccupancyList, decay):
+    def update_parameters(self, exps, stateOccupancyList, decay, klterms):
         # Collect experiences
 
         for _ in range(self.epochs):
@@ -95,16 +95,24 @@ class PPOAlgo(BaseAlgo):
                         loss = policy_loss - self.entropy_coef * entropy + self.value_loss_coef * value_loss
                     elif self.useKL==True:
                         SSRepPolicy=stateOccupancyList
-                        KLTerm=self.KL(np.array(self.SSRepDem),np.array(SSRepPolicy))
                         device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
-                        KLTerm = torch.tensor(KLTerm, requires_grad=True,device=device, dtype=torch.float)
-                        print("PL:" + str(policy_loss))
-                        print("VL:" + str(value_loss))
+                        KLlist=torch.tensor(0, requires_grad=True,device=device, dtype=torch.float)
+                        for i in range(klterms):
+                            if klterms != 1:
+                                KLTerm=self.KL(np.array(self.SSRepDem[i]),np.array(SSRepPolicy))
+                            else:
+                                print(self.SSRepDem)
+                                KLTerm = self.KL(np.array(self.SSRepDem), np.array(SSRepPolicy))
+                            KLTerm = torch.tensor(KLTerm, requires_grad=True,device=device, dtype=torch.float)
+                            KLlist = KLlist + (KLTerm / klterms)
+                        #print("PL:" + str(policy_loss))
+                        #print("VL:" + str(value_loss))
                         KLloss = (KLTerm* self.KLweight) #* (1/math.sqrt(decay))
+                        KLlist = torch.tensor(KLlist, requires_grad=True,device=device, dtype=torch.float)
                         #KLloss = torch.tensor(KLloss, requires_grad=True)
-                        print("KL:" + str(KLloss))
+                        #print("KL:" + str(KLloss))
 
-                        loss = policy_loss - self.KLweight * KLTerm - self.entropy_coef * entropy + self.value_loss_coef * value_loss
+                        loss = policy_loss - self.KLweight * KLlist - self.entropy_coef * entropy + self.value_loss_coef * value_loss
 
                     # Update batch valuesgit
 
