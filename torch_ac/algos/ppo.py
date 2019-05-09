@@ -107,8 +107,8 @@ class PPOAlgo(BaseAlgo):
                             KLlist = KLlist + (KLTerm / klterms)
                         #print("PL:" + str(policy_loss))
                         #print("VL:" + str(value_loss))
-                        KLloss = (KLTerm* self.KLweight) #* (1/math.sqrt(decay))
-                        KLlist = torch.tensor(KLlist, requires_grad=True,device=device, dtype=torch.float)
+                        #KLloss = (KLTerm* self.KLweight) #* (1/math.sqrt(decay))
+                        #KLlist = torch.tensor(KLlist, requires_grad=True,device=device, dtype=torch.float)
                         #KLloss = torch.tensor(KLloss, requires_grad=True)
                         #print("KL:" + str(KLloss))
 
