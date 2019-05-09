@@ -92,6 +92,8 @@ class PPOAlgo(BaseAlgo):
                     surr2 = (value_clipped - sb.returnn).pow(2)
                     value_loss = torch.max(surr1, surr2).mean()
                     if self.useKL==False:
+                        #print("PL:" + str(policy_loss))
+                        #print("VL:" + str(value_loss))
                         loss = policy_loss - self.entropy_coef * entropy + self.value_loss_coef * value_loss
                     elif self.useKL==True:
                         SSRepPolicy=stateOccupancyList
@@ -101,18 +103,19 @@ class PPOAlgo(BaseAlgo):
                             if klterms != 1:
                                 KLTerm=self.KL(np.array(self.SSRepDem[i]),np.array(SSRepPolicy))
                             else:
-                                print(self.SSRepDem)
                                 KLTerm = self.KL(np.array(self.SSRepDem), np.array(SSRepPolicy))
                             KLTerm = torch.tensor(KLTerm, requires_grad=True,device=device, dtype=torch.float)
                             KLlist = KLlist + (KLTerm / klterms)
+                            #print(KLlist)
                         #print("PL:" + str(policy_loss))
                         #print("VL:" + str(value_loss))
                         #KLloss = (KLTerm* self.KLweight) #* (1/math.sqrt(decay))
                         #KLlist = torch.tensor(KLlist, requires_grad=True,device=device, dtype=torch.float)
                         #KLloss = torch.tensor(KLloss, requires_grad=True)
-                        #print("KL:" + str(KLloss))
-
-                        loss = policy_loss - self.KLweight * KLlist - self.entropy_coef * entropy + self.value_loss_coef * value_loss
+                        #print("KL:" + str(KLlist))
+                        #self.KLweight = torch.Tensor(self.KLweight,requires_grad=True,device=device, dtype=torch.float)
+                        #KLlist=torch.tensor(KLlist, requires_grad=True,device=device, dtype=torch.float)
+                        loss = policy_loss -  self.KLweight*KLlist - self.entropy_coef * entropy + self.value_loss_coef * value_loss
 
                     # Update batch valuesgit
 
