@@ -101,7 +101,7 @@ class PPOAlgo(BaseAlgo):
                             if klterms != 1:
                                 KLTerm=self.KL(np.array(self.SSRepDem[i]),np.array(SSRepPolicy))
                             else:
-                                print(self.SSRepDem)
+                                #print(self.SSRepDem)
                                 KLTerm = self.KL(np.array(self.SSRepDem), np.array(SSRepPolicy))
                             KLTerm = torch.tensor(KLTerm, requires_grad=True,device=device, dtype=torch.float)
                             KLlist = KLlist + (KLTerm / klterms)
