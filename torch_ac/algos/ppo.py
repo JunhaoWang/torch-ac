@@ -1,6 +1,7 @@
 import numpy
 import torch
 import torch.nn.functional as F
+from torch.nn import KLDivLoss
 import math
 
 from sklearn.metrics import mutual_info_score
@@ -35,12 +36,13 @@ class PPOAlgo(BaseAlgo):
 
         self.optimizer = torch.optim.Adam(self.acmodel.parameters(), lr, eps=adam_eps)
         self.batch_num = 0
+        self.KL = KLDivLoss()
 
-    def KL(self ,a, b):
-        a = np.asarray(a, dtype=np.float)
-        b = np.asarray(b, dtype=np.float)
-
-        return np.sum(np.where(a != 0, a * np.log(a / b), 0))
+    # def KL(self ,a, b):
+    #     a = np.asarray(a, dtype=np.float)
+    #     b = np.asarray(b, dtype=np.float)
+    #
+    #     return np.sum(np.where(a != 0, a * np.log(a / b), 0))
 
     def update_parameters(self, exps, stateOccupancyList, decay, klterms):
         # Collect experiences
@@ -99,12 +101,14 @@ class PPOAlgo(BaseAlgo):
                         KLlist=torch.tensor(0, requires_grad=True,device=device, dtype=torch.float)
                         for i in range(klterms):
                             if klterms != 1:
-                                KLTerm=self.KL(np.array(self.SSRepDem[i]),np.array(SSRepPolicy))
+                                KLTerm=self.KL(torch.log(torch.tensor(self.SSRepDem[i]), requires_grad=True, device=device, dtype=torch.float),
+                                               torch.tensor(SSRepPolicy, requires_grad=True, device=device, dtype=torch.float))
                             else:
                                 #print(self.SSRepDem)
-                                KLTerm = self.KL(np.array(self.SSRepDem), np.array(SSRepPolicy))
-                            KLTerm = torch.tensor(KLTerm, requires_grad=True,device=device, dtype=torch.float)
-                            KLlist = KLlist + (KLTerm / klterms)
+                                KLTerm = self.KL(torch.log(torch.tensor(self.SSRepDem, requires_grad=True, device=device, dtype=torch.float)),
+                                                 torch.tensor(SSRepPolicy, requires_grad=True, device=device, dtype=torch.float))
+                            # KLTerm = torch.tensor(KLTerm, requires_grad=True,device=device, dtype=torch.float)
+                            KLlist = KLlist + (KLTerm / klterms)**2
                         #print("PL:" + str(policy_loss))
                         #print("VL:" + str(value_loss))
                         #KLloss = (KLTerm* self.KLweight) #* (1/math.sqrt(decay))
@@ -145,6 +149,9 @@ class PPOAlgo(BaseAlgo):
 
                 batch_loss.backward()
                 grad_norm = sum(p.grad.data.norm(2).item() ** 2 for p in self.acmodel.parameters()) ** 0.5
+
+                print(grad_norm)
+
                 torch.nn.utils.clip_grad_norm_(self.acmodel.parameters(), self.max_grad_norm)
 
                 self.optimizer.step()
