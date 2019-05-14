@@ -91,6 +91,7 @@ class BaseAlgo(ABC):
         self.actions = torch.zeros(*shape, device=self.device, dtype=torch.int)
         self.values = torch.zeros(*shape, device=self.device)
         self.rewards = torch.zeros(*shape, device=self.device)
+        self.old_rewards = torch.zeros(*shape, device=self.device)
         self.advantages = torch.zeros(*shape, device=self.device)
         self.log_probs = torch.zeros(*shape, device=self.device)
 

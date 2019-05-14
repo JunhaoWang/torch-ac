@@ -85,7 +85,9 @@ class PPOAlgo(BaseAlgo):
 
             obs, reward, done, _ = self.env.step(action.cpu().numpy())
 
-            # TODO: update reward to incorporate KL divergence
+            old_reward = reward
+
+            # # # TODO: update reward to incorporate KL divergence
             if self.useKL and self.KL_loss is not None:
                 temp = []
                 for r in reward:
@@ -104,6 +106,7 @@ class PPOAlgo(BaseAlgo):
             self.mask = 1 - torch.tensor(done, device=self.device, dtype=torch.float)
             self.actions[i] = action
             self.values[i] = value
+
             if self.reshape_reward is not None:
                 self.rewards[i] = torch.tensor([
                     self.reshape_reward(obs_, action_, reward_, done_)
@@ -111,12 +114,25 @@ class PPOAlgo(BaseAlgo):
                 ], device=self.device)
             else:
                 self.rewards[i] = torch.tensor(reward, device=self.device)
+
+            # change reward
+
+            if self.reshape_reward is not None:
+                self.old_rewards[i] = torch.tensor([
+                    self.reshape_reward(obs_, action_, reward_, done_)
+                    for obs_, action_, reward_, done_ in zip(obs, action, old_reward, done)
+                ], device=self.device)
+            else:
+                self.old_rewards[i] = torch.tensor(old_reward, device=self.device)
+
+            # change reward
+
             self.log_probs[i] = dist.log_prob(action)
 
             # Update log values
 
-            self.log_episode_return += torch.tensor(reward, device=self.device, dtype=torch.float)
-            self.log_episode_reshaped_return += self.rewards[i]
+            self.log_episode_return += torch.tensor(old_reward, device=self.device, dtype=torch.float)
+            self.log_episode_reshaped_return += self.old_rewards[i]
             self.log_episode_num_frames += torch.ones(self.num_procs, device=self.device)
 
             for i, done_ in enumerate(done):
@@ -303,7 +319,7 @@ class PPOAlgo(BaseAlgo):
                 batch_loss.backward()
                 grad_norm = sum(p.grad.data.norm(2).item() ** 2 for p in self.acmodel.parameters()) ** 0.5
 
-                print(grad_norm)
+                # print(grad_norm)
 
                 torch.nn.utils.clip_grad_norm_(self.acmodel.parameters(), self.max_grad_norm)
 
