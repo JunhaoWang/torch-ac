@@ -139,6 +139,10 @@ class BaseAlgo(ABC):
 
             obs, reward, done, _ = self.env.step(action.cpu().numpy())
 
+
+            # TODO: update reward to incorporate KL divergence
+
+
             # Update experiences values
 
             self.obss[i] = self.obs
