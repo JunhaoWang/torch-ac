@@ -87,13 +87,13 @@ class PPOAlgo(BaseAlgo):
 
             old_reward = reward
 
-            # # # TODO: update reward to incorporate KL divergence
-            if self.useKL and self.KL_loss is not None:
-                temp = []
-                for r in reward:
-                    r += self.KL_loss.item()
-                    temp.append(r)
-                reward = tuple(temp)
+            # # # # TODO: update reward to incorporate KL divergence
+            # if self.useKL and self.KL_loss is not None:
+            #     temp = []
+            #     for r in reward:
+            #         r += self.KL_loss.item()
+            #         temp.append(r)
+            #     reward = tuple(temp)
 
             # Update experiences values
 
@@ -185,7 +185,12 @@ class PPOAlgo(BaseAlgo):
         exps.value = self.values.transpose(0, 1).reshape(-1)
         exps.reward = self.rewards.transpose(0, 1).reshape(-1)
         exps.advantage = self.advantages.transpose(0, 1).reshape(-1)
+
         exps.returnn = exps.value + exps.advantage
+
+        if self.useKL and self.KL_loss is not None:
+            exps.returnn += self.KL_loss.item()
+
         exps.log_prob = self.log_probs.transpose(0, 1).reshape(-1)
         #exps.traj_length=
 
@@ -254,11 +259,23 @@ class PPOAlgo(BaseAlgo):
                     ratio = torch.exp(dist.log_prob(sb.action) - sb.log_prob)
 
 
-                    surr1 = ratio * sb.advantage
-                    surr2 = torch.clamp(ratio, 1.0 - self.clip_eps, 1.0 + self.clip_eps) * sb.advantage
+
+                    # surr1_old = ratio * sb.advantage
+                    # surr2_old = torch.clamp(ratio, 1.0 - self.clip_eps, 1.0 + self.clip_eps) * sb.advantage
+                    #
+                    # if self.useKL == False:
+                    #     policy_loss_old = -torch.min(surr1_old, surr2_old).mean()
+
+                    # hack
+                    surr1 = ratio
+                    surr2 = torch.clamp(ratio, 1.0 - self.clip_eps, 1.0 + self.clip_eps)
 
                     if self.useKL == False:
-                        policy_loss = -torch.min(surr1, surr2).mean()
+                        # policy_loss = -torch.min(surr1, surr2).mean() * sb.advantage
+                        policy_loss = (-torch.min(surr1, surr2)* sb.advantage).mean()
+                    # hack
+
+
                     else:
                         SSRepPolicy = stateOccupancyList
                         device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
