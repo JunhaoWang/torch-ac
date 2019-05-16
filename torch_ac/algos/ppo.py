@@ -87,14 +87,6 @@ class PPOAlgo(BaseAlgo):
 
             old_reward = reward
 
-            # # # # TODO: update reward to incorporate KL divergence
-            # if self.useKL and self.KL_loss is not None:
-            #     temp = []
-            #     for r in reward:
-            #         r += self.KL_loss.item()
-            #         temp.append(r)
-            #     reward = tuple(temp)
-
             # Update experiences values
 
             self.obss[i] = self.obs
@@ -243,6 +235,26 @@ class PPOAlgo(BaseAlgo):
                     memory = exps.memory[inds]
 
                 for i in range(self.recurrence):
+                    # Calculate KL term
+                    if self.useKL:
+                        SSRepPolicy = stateOccupancyList
+                        device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
+                        KLlist = torch.tensor(0, requires_grad=True, device=device, dtype=torch.float)
+                        for i in range(klterms):
+                            if klterms != 1:
+                                KLTerm = self.KL(
+                                    torch.log(torch.tensor(self.SSRepDem[i]), requires_grad=True, device=device,
+                                              dtype=torch.float),
+                                    torch.tensor(SSRepPolicy, requires_grad=True, device=device, dtype=torch.float))
+                            else:
+                                KLTerm = self.KL(torch.log(
+                                    torch.tensor(self.SSRepDem, requires_grad=True, device=device, dtype=torch.float)),
+                                    torch.tensor(SSRepPolicy, requires_grad=True, device=device,
+                                                 dtype=torch.float))
+
+                            KLlist = KLlist + (KLTerm / klterms) ** 2
+                        self.KL_loss = - self.KLweight * KLlist
+
                     # Create a sub-batch of experience
 
                     sb = exps[inds + i]
@@ -258,44 +270,11 @@ class PPOAlgo(BaseAlgo):
 
                     ratio = torch.exp(dist.log_prob(sb.action) - sb.log_prob)
 
-
-
-                    # surr1_old = ratio * sb.advantage
-                    # surr2_old = torch.clamp(ratio, 1.0 - self.clip_eps, 1.0 + self.clip_eps) * sb.advantage
-                    #
-                    # if self.useKL == False:
-                    #     policy_loss_old = -torch.min(surr1_old, surr2_old).mean()
-
-                    # hack
                     surr1 = ratio
                     surr2 = torch.clamp(ratio, 1.0 - self.clip_eps, 1.0 + self.clip_eps)
 
-                    if self.useKL == False:
-                        # policy_loss = -torch.min(surr1, surr2).mean() * sb.advantage
-                        policy_loss = (-torch.min(surr1, surr2)* sb.advantage).mean()
-                    # hack
+                    policy_loss = (-torch.min(surr1, surr2) * sb.advantage).mean()
 
-
-                    else:
-                        SSRepPolicy = stateOccupancyList
-                        device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
-                        KLlist = torch.tensor(0, requires_grad=True, device=device, dtype=torch.float)
-                        for i in range(klterms):
-                            if klterms != 1:
-                                KLTerm = self.KL(
-                                    torch.log(torch.tensor(self.SSRepDem[i]), requires_grad=True, device=device,
-                                              dtype=torch.float),
-                                    torch.tensor(SSRepPolicy, requires_grad=True, device=device, dtype=torch.float))
-                            else:
-                                # print(self.SSRepDem)
-                                KLTerm = self.KL(torch.log(
-                                    torch.tensor(self.SSRepDem, requires_grad=True, device=device, dtype=torch.float)),
-                                                 torch.tensor(SSRepPolicy, requires_grad=True, device=device,
-                                                              dtype=torch.float))
-                            # KLTerm = torch.tensor(KLTerm, requires_grad=True,device=device, dtype=torch.float)
-                            KLlist = KLlist + (KLTerm / klterms) ** 2
-                        policy_loss = -torch.min(surr1, surr2).mean()
-                        self.KL_loss = - self.KLweight * KLlist
 
                     value_clipped = sb.value + torch.clamp(value - sb.value, -self.clip_eps, self.clip_eps)
                     surr1 = (value - sb.returnn).pow(2)
