@@ -181,7 +181,7 @@ class PPOAlgo(BaseAlgo):
         exps.returnn = exps.value + exps.advantage
 
         if self.useKL and self.KL_loss is not None:
-            exps.returnn += self.KL_loss.item()
+            exps.advantage += self.KL_loss.item()
 
         exps.log_prob = self.log_probs.transpose(0, 1).reshape(-1)
         #exps.traj_length=
