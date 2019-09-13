@@ -9,7 +9,7 @@ class BaseAlgo(ABC):
     """The base class for RL algorithms."""
 
     def __init__(self, envs, acmodel, num_frames_per_proc, discount, lr, gae_lambda, entropy_coef,
-                 value_loss_coef, max_grad_norm, recurrence, preprocess_obss, reshape_reward, useKL, KLweight, stateIndexDict, SSRepDem):
+                 value_loss_coef, max_grad_norm, recurrence, preprocess_obss, reshape_reward, useKL, KLweight, stateIndexDict, SSRepDem, useCVAR):
         """
         Initializes a `BaseAlgo` instance.
 
@@ -63,6 +63,7 @@ class BaseAlgo(ABC):
         #KL parameters
         self.useKL = useKL
         self.KLweight = KLweight
+        self.useCVAR = useCVAR
         self.stateIndexDict=stateIndexDict
         self.SSRepDem=SSRepDem
 
