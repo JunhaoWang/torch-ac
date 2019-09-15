@@ -268,14 +268,18 @@ class PPOAlgo(BaseAlgo):
                         discounted_sum_reward=0
                         for i in range(len(reward_episode)):
                             discounted_sum_reward += (self.discount ** (i)) * reward_episode[i]
-
-                        reward_episode_sort = reward_episode.sort()
-                        upsilon=reward_episode_sort[math.trunc(alpha*len(reward_episode_sort))]
-
+                        #reward_episode_sort = reward_episode.sort()
+                        #print("epistode rewards sort")
+                        #print(reward_episode)
+                        sorter_array=reward_episode
+                        sorter=sorter_array.sort()
+                        sorter=sorter[0]
+                        upsilon=sorter[math.trunc(alpha*len(sorter))]
+                        first_term=(lam_CVAR/(1-alpha))
                         if discounted_sum_reward >= upsilon:
-                            CVAR= upsilon + (lam_CVAR/(1-alpha)) (discounted_sum_reward - upsilon) - beta
+                            CVAR= upsilon + torch.tensor(first_term)* (discounted_sum_reward - upsilon) - torch.tensor(beta)
                         else:
-                            CVAR=upsilon - beta
+                            CVAR=upsilon - torch.tensor(beta)
 
                     # Compute loss
 
@@ -335,7 +339,7 @@ class PPOAlgo(BaseAlgo):
                 batch_loss.backward()
                 grad_norm = sum(p.grad.data.norm(2).item() ** 2 for p in self.acmodel.parameters()) ** 0.5
 
-                # print(grad_norm)
+                print(grad_norm)
 
                 torch.nn.utils.clip_grad_norm_(self.acmodel.parameters(), self.max_grad_norm)
 
