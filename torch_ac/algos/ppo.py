@@ -12,6 +12,7 @@ from random import randint
 from abc import ABC, abstractmethod
 
 
+
 from torch_ac.format import default_preprocess_obss
 from torch_ac.utils import DictList, ParallelEnv
 
@@ -269,7 +270,7 @@ class PPOAlgo(BaseAlgo):
                             discounted_sum_reward += (self.discount ** (i)) * reward_episode[i]
 
                         reward_episode_sort = reward_episode.sort()
-                        upsilon=reward_episode_sort[trunc(alpha*len(reward_episode_sort))]
+                        upsilon=reward_episode_sort[math.trunc(alpha*len(reward_episode_sort))]
 
                         if discounted_sum_reward >= upsilon:
                             CVAR= upsilon + (lam_CVAR/(1-alpha)) (discounted_sum_reward - upsilon) - beta
