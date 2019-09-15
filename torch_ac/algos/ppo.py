@@ -260,7 +260,21 @@ class PPOAlgo(BaseAlgo):
                     sb = exps[inds + i]
 
                     if self.useCVAR:
-                        print(exps.reward)
+                        beta=0.3
+                        alpha=0.05
+                        lam_CVAR=1
+                        reward_episode = exps.reward
+                        discounted_sum_reward=0
+                        for i in range(len(reward_episode)):
+                            discounted_sum_reward += (self.discount ** (i)) * reward_episode[i]
+
+                        reward_episode_sort = reward_episode.sort()
+                        upsilon=reward_episode_sort[trunc(alpha*len(reward_episode_sort))]
+
+                        if discounted_sum_reward >= upsilon:
+                            CVAR= upsilon + (lam_CVAR/(1-alpha)) (discounted_sum_reward - upsilon) - beta
+                        else:
+                            CVAR=upsilon - beta
 
                     # Compute loss
 
@@ -283,8 +297,10 @@ class PPOAlgo(BaseAlgo):
                     surr1 = (value - sb.returnn).pow(2)
                     surr2 = (value_clipped - sb.returnn).pow(2)
                     value_loss = torch.max(surr1, surr2).mean()
-
-                    loss = policy_loss - self.entropy_coef * entropy + self.value_loss_coef * value_loss
+                    if self.useCVAR:
+                        loss = policy_loss - self.entropy_coef * entropy + self.value_loss_coef * value_loss + CVAR
+                    else:
+                        loss = policy_loss - self.entropy_coef * entropy + self.value_loss_coef * value_loss
 
                     # Update batch valuesgit
 
