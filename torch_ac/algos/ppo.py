@@ -263,7 +263,7 @@ class PPOAlgo(BaseAlgo):
                     if self.useCVAR:
                         device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
 
-                        beta=0.3
+                        beta=20
                         alpha=0.05
                         lam_CVAR=1
 
