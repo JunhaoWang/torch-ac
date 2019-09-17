@@ -267,7 +267,7 @@ class PPOAlgo(BaseAlgo):
                         alpha=0.05
                         lam_CVAR=1
 
-                        reward_episode = torch.tensor(exps.advantage, requires_grad=True, device=device, dtype=torch.float)
+                        reward_episode = torch.tensor(exps.reward, requires_grad=True, device=device, dtype=torch.float)
                         discounted_sum_reward=0
 
                         for i in range(len(reward_episode)):
@@ -296,8 +296,13 @@ class PPOAlgo(BaseAlgo):
 
                     ratio = torch.exp(dist.log_prob(sb.action) - sb.log_prob)
 
-                    surr1 = ratio * sb.advantage
-                    surr2 = torch.clamp(ratio, 1.0 - self.clip_eps, 1.0 + self.clip_eps) * sb.advantage
+                    if self.useCVAR:
+                        surr1 = ratio * sb.advantage * CVAR
+                        surr2 = torch.clamp(ratio, 1.0 - self.clip_eps, 1.0 + self.clip_eps) * sb.advantage * CVAR
+
+                    else:
+                        surr1 = ratio * sb.advantage
+                        surr2 = torch.clamp(ratio, 1.0 - self.clip_eps, 1.0 + self.clip_eps) * sb.advantage
 
                     policy_loss = (-torch.min(surr1, surr2)).mean()
 
@@ -307,10 +312,7 @@ class PPOAlgo(BaseAlgo):
                     surr2 = (value_clipped - sb.returnn).pow(2)
                     value_loss = torch.max(surr1, surr2).mean()
 
-                    if self.useCVAR:
-                        loss = policy_loss - self.entropy_coef * entropy + self.value_loss_coef * value_loss + CVAR
-                    else:
-                        loss = policy_loss - self.entropy_coef * entropy + self.value_loss_coef * value_loss
+                    loss = policy_loss - self.entropy_coef * entropy + self.value_loss_coef * value_loss
 
                     # Update batch valuesgit
 
