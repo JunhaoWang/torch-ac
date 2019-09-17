@@ -297,8 +297,8 @@ class PPOAlgo(BaseAlgo):
                     ratio = torch.exp(dist.log_prob(sb.action) - sb.log_prob)
 
                     if self.useCVAR:
-                        surr1 = ratio * sb.advantage * CVAR
-                        surr2 = torch.clamp(ratio, 1.0 - self.clip_eps, 1.0 + self.clip_eps) * sb.advantage * CVAR
+                        surr1 = ratio * (sb.advantage - CVAR)
+                        surr2 = torch.clamp(ratio, 1.0 - self.clip_eps, 1.0 + self.clip_eps) * (sb.advantage - CVAR)
 
                     else:
                         surr1 = ratio * sb.advantage
