@@ -264,18 +264,20 @@ class PPOAlgo(BaseAlgo):
                         beta=0.3
                         alpha=0.05
                         lam_CVAR=1
+
                         reward_episode = exps.reward
                         discounted_sum_reward=0
+
                         for i in range(len(reward_episode)):
                             discounted_sum_reward += (self.discount ** (i)) * reward_episode[i]
-                        #reward_episode_sort = reward_episode.sort()
-                        #print("epistode rewards sort")
-                        #print(reward_episode)
-                        sorter_array=reward_episode
-                        sorter=sorter_array.sort()
-                        sorter=sorter[0]
-                        upsilon=sorter[math.trunc(alpha*len(sorter))]
+
+
+                        reward_sort=reward_episode
+                        reward_sort=reward_sort.sort()
+                        reward_sort=reward_sort[0]
+                        upsilon=reward_sort[math.trunc(alpha*len(reward_sort))]
                         first_term=(lam_CVAR/(1-alpha))
+
                         if discounted_sum_reward >= upsilon:
                             CVAR= upsilon + torch.tensor(first_term)* (discounted_sum_reward - upsilon) - torch.tensor(beta)
                         else:
