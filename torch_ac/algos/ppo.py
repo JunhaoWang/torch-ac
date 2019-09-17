@@ -261,11 +261,13 @@ class PPOAlgo(BaseAlgo):
                     sb = exps[inds + i]
 
                     if self.useCVAR:
+                        device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
+
                         beta=0.3
                         alpha=0.05
                         lam_CVAR=1
 
-                        reward_episode = exps.reward
+                        reward_episode = torch.tensor(exps.advantage, requires_grad=True, device=device, dtype=torch.float)
                         discounted_sum_reward=0
 
                         for i in range(len(reward_episode)):
@@ -304,6 +306,7 @@ class PPOAlgo(BaseAlgo):
                     surr1 = (value - sb.returnn).pow(2)
                     surr2 = (value_clipped - sb.returnn).pow(2)
                     value_loss = torch.max(surr1, surr2).mean()
+
                     if self.useCVAR:
                         loss = policy_loss - self.entropy_coef * entropy + self.value_loss_coef * value_loss + CVAR
                     else:
@@ -341,7 +344,7 @@ class PPOAlgo(BaseAlgo):
                 batch_loss.backward()
                 grad_norm = sum(p.grad.data.norm(2).item() ** 2 for p in self.acmodel.parameters()) ** 0.5
 
-                print(grad_norm)
+                print(self.acmodel.parameters)
 
                 torch.nn.utils.clip_grad_norm_(self.acmodel.parameters(), self.max_grad_norm)
 
