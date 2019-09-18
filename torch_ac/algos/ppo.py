@@ -260,8 +260,6 @@ class PPOAlgo(BaseAlgo):
 
                     # Create a sub-batch of experience
 
-                    sb = exps[inds + i]
-
                     if self.acmodel.recurrent:
                         dist, value, memory = self.acmodel(sb.obs, memory * sb.mask)
                     else:
@@ -294,6 +292,10 @@ class PPOAlgo(BaseAlgo):
 
                     if self.useCVAR and self.CVAR is not None:
                         exps.returnn -= self.CVAR.item()
+
+                    sb = exps[inds + i]
+
+
 
 
                     # Compute loss
