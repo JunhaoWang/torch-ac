@@ -43,7 +43,7 @@ class PPOAlgo(BaseAlgo):
         self.optimizer = torch.optim.Adam(self.acmodel.parameters(), lr, eps=adam_eps)
         self.batch_num = 0
         self.KL = KLDivLoss()
-        self.CVAR=None
+        self.CVAR=0
         self.KL_loss = None
 
     # def KL(self ,a, b):
@@ -260,6 +260,7 @@ class PPOAlgo(BaseAlgo):
 
                     # Create a sub-batch of experience
 
+                    CVAR=None
 
                     if self.useCVAR:
 
@@ -267,7 +268,7 @@ class PPOAlgo(BaseAlgo):
                         alpha=0.05
                         lam_CVAR=1
 
-                        reward_episode = exps.reward
+                        reward_episode = exps.advantage
                         discounted_sum_reward=0
 
                         for i in range(len(reward_episode)):
@@ -284,13 +285,11 @@ class PPOAlgo(BaseAlgo):
                             CVAR= upsilon + torch.tensor(first_term)* (discounted_sum_reward - upsilon) - torch.tensor(beta)
                         else:
                             CVAR=upsilon - torch.tensor(beta)
-                        self.CVAR=CVAR
 
-                    #if self.useCVAR and self.CVAR is not None:
-                    #    exps.returnn -= self.CVAR.item()
+                        if self.useCVAR and CVAR is not None:
+                            exps.returnn += CVAR.item()
 
                     sb = exps[inds + i]
-
 
 
 
@@ -300,7 +299,6 @@ class PPOAlgo(BaseAlgo):
                         dist, value, memory = self.acmodel(sb.obs, memory * sb.mask)
                     else:
                         dist, value = self.acmodel(sb.obs)
-
 
                     entropy = dist.entropy().mean()
 
@@ -316,10 +314,8 @@ class PPOAlgo(BaseAlgo):
                     surr1 = (value - sb.returnn).pow(2)
                     surr2 = (value_clipped - sb.returnn).pow(2)
                     value_loss = torch.max(surr1, surr2).mean()
-                    if self.useCVAR:
-                        loss = policy_loss - self.entropy_coef * entropy + self.value_loss_coef * value_loss
-                    else:
-                        loss = policy_loss - self.entropy_coef * entropy + self.value_loss_coef * value_loss
+
+                    loss = policy_loss - self.entropy_coef * entropy + self.value_loss_coef * value_loss
 
 
                     # Update batch valuesgit
@@ -353,7 +349,6 @@ class PPOAlgo(BaseAlgo):
 
                 batch_loss.backward()
                 grad_norm = sum(p.grad.data.norm(2).item() ** 2 for p in self.acmodel.parameters()) ** 0.5
-                print(grad_norm)
 
                 torch.nn.utils.clip_grad_norm_(self.acmodel.parameters(), self.max_grad_norm)
 
