@@ -291,7 +291,7 @@ class PPOAlgo(BaseAlgo):
                     print(exps.returnn.shape)
                     print(CVAR.shape)
 
-                    exps.returnn += CVAR
+                    exps.returnn += CVAR.item()
 
                     print(exps.returnn.shape)
 
