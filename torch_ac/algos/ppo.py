@@ -43,7 +43,7 @@ class PPOAlgo(BaseAlgo):
         self.optimizer = torch.optim.Adam(self.acmodel.parameters(), lr, eps=adam_eps)
         self.batch_num = 0
         self.KL = KLDivLoss()
-        self.CVAR=0
+        self.CVAR=None
         self.KL_loss = None
 
     # def KL(self ,a, b):
@@ -185,7 +185,7 @@ class PPOAlgo(BaseAlgo):
         if self.useKL and self.KL_loss is not None:
             exps.returnn += self.KL_loss.item()
 
-        if self.useCVAR:
+        if self.useCVAR and self.CVAR is not None:
             exps.returnn -= self.CVAR.item()
 
 
@@ -294,6 +294,7 @@ class PPOAlgo(BaseAlgo):
                             CVAR= upsilon + torch.tensor(first_term)* (discounted_sum_reward - upsilon) - torch.tensor(beta)
                         else:
                             CVAR=upsilon - torch.tensor(beta)
+                        print(self.CVAR)
                         self.CVAR=CVAR
 
 
@@ -315,7 +316,7 @@ class PPOAlgo(BaseAlgo):
                     surr2 = (value_clipped - sb.returnn).pow(2)
                     value_loss = torch.max(surr1, surr2).mean()
                     if self.useCVAR:
-                        loss = policy_loss - self.entropy_coef * entropy + self.value_loss_coef * value_loss 
+                        loss = policy_loss - self.entropy_coef * entropy + self.value_loss_coef * value_loss
                     else:
                         loss = policy_loss - self.entropy_coef * entropy + self.value_loss_coef * value_loss
 
