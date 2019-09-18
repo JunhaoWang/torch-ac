@@ -184,7 +184,8 @@ class PPOAlgo(BaseAlgo):
 
         if self.useKL and self.KL_loss is not None:
             exps.returnn += self.KL_loss.item()
-
+        if self.useCVAR:
+            exps.returnn -= self.CVAR
 
         exps.log_prob = self.log_probs.transpose(0, 1).reshape(-1)
         #exps.traj_length=
@@ -260,15 +261,16 @@ class PPOAlgo(BaseAlgo):
 
                     # Create a sub-batch of experience
 
-                    CVAR=None
+                    sb = exps[inds + i]
 
                     if self.useCVAR:
+                        device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
 
-                        beta=0.5
+                        beta=20
                         alpha=0.05
                         lam_CVAR=1
 
-                        reward_episode = exps.advantage
+                        reward_episode = torch.tensor(exps.reward, requires_grad=True, device=device, dtype=torch.float)
                         discounted_sum_reward=0
 
                         for i in range(len(reward_episode)):
@@ -286,11 +288,8 @@ class PPOAlgo(BaseAlgo):
                         else:
                             CVAR=upsilon - torch.tensor(beta)
 
-                        #if self.useCVAR and CVAR is not None:
-                        #    exps.returnn += CVAR.item()
-
-                    sb = exps[inds + i]
-
+                        self.CVAR= CVAR
+                        print(self.CVAR)
 
 
                     # Compute loss
@@ -316,7 +315,6 @@ class PPOAlgo(BaseAlgo):
                     value_loss = torch.max(surr1, surr2).mean()
 
                     loss = policy_loss - self.entropy_coef * entropy + self.value_loss_coef * value_loss
-
 
                     # Update batch valuesgit
 
