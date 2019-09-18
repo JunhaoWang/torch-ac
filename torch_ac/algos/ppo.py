@@ -283,7 +283,7 @@ class PPOAlgo(BaseAlgo):
                         if discounted_sum_reward >= upsilon:
                             CVAR= upsilon + torch.tensor(first_term)* (discounted_sum_reward - upsilon)
                         else:
-                            CVAR=0
+                            CVAR=None
 
                     if self.useCVAR and CVAR is not None:
                         exps.returnn -= CVAR.item()
