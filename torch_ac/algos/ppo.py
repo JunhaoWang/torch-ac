@@ -185,9 +185,6 @@ class PPOAlgo(BaseAlgo):
         if self.useKL and self.KL_loss is not None:
             exps.returnn += self.KL_loss.item()
 
-        if self.useCVAR and self.CVAR is not None:
-            exps.returnn -= self.CVAR.item()
-
 
         exps.log_prob = self.log_probs.transpose(0, 1).reshape(-1)
         #exps.traj_length=
@@ -260,7 +257,6 @@ class PPOAlgo(BaseAlgo):
 
                             KLlist = KLlist + (KLTerm / klterms) ** 2
                         self.KL_loss =  self.KLweight * KLlist
-                        print(self.KL_loss)
 
                     # Create a sub-batch of experience
 
@@ -294,8 +290,10 @@ class PPOAlgo(BaseAlgo):
                             CVAR= upsilon + torch.tensor(first_term)* (discounted_sum_reward - upsilon) - torch.tensor(beta)
                         else:
                             CVAR=upsilon - torch.tensor(beta)
-                        print(self.CVAR)
                         self.CVAR=CVAR
+
+                    if self.useCVAR and self.CVAR is not None:
+                        exps.returnn -= self.CVAR.item()
 
 
                     # Compute loss
