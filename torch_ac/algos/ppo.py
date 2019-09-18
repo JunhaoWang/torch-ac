@@ -43,6 +43,7 @@ class PPOAlgo(BaseAlgo):
         self.optimizer = torch.optim.Adam(self.acmodel.parameters(), lr, eps=adam_eps)
         self.batch_num = 0
         self.KL = KLDivLoss()
+        self.CVAR=0
         self.KL_loss = None
 
     # def KL(self ,a, b):
@@ -182,7 +183,9 @@ class PPOAlgo(BaseAlgo):
         exps.returnn = exps.value + exps.advantage
 
         if self.useKL and self.KL_loss is not None:
-            exps.advantage += self.KL_loss.item()
+            exps.returnn += self.KL_loss.item()
+        if self.useCVAR:
+            exps.returnn -= self.CVAR
 
         exps.log_prob = self.log_probs.transpose(0, 1).reshape(-1)
         #exps.traj_length=
@@ -254,7 +257,7 @@ class PPOAlgo(BaseAlgo):
                                                  dtype=torch.float))
 
                             KLlist = KLlist + (KLTerm / klterms) ** 2
-                        self.KL_loss = - self.KLweight * KLlist
+                        self.KL_loss =  self.KLweight * KLlist
 
                     # Create a sub-batch of experience
 
@@ -285,6 +288,8 @@ class PPOAlgo(BaseAlgo):
                         else:
                             CVAR=upsilon - torch.tensor(beta)
 
+                        self.CVAR= CVAR
+
                     # Compute loss
 
                     if self.acmodel.recurrent:
@@ -296,13 +301,8 @@ class PPOAlgo(BaseAlgo):
 
                     ratio = torch.exp(dist.log_prob(sb.action) - sb.log_prob)
 
-                    if self.useCVAR:
-                        surr1 = ratio * (sb.advantage - CVAR)
-                        surr2 = torch.clamp(ratio, 1.0 - self.clip_eps, 1.0 + self.clip_eps) * (sb.advantage - CVAR)
-
-                    else:
-                        surr1 = ratio * sb.advantage
-                        surr2 = torch.clamp(ratio, 1.0 - self.clip_eps, 1.0 + self.clip_eps) * sb.advantage
+                    surr1 = ratio * sb.advantage
+                    surr2 = torch.clamp(ratio, 1.0 - self.clip_eps, 1.0 + self.clip_eps) * sb.advantage
 
                     policy_loss = (-torch.min(surr1, surr2)).mean()
 
