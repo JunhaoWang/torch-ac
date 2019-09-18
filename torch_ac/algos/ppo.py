@@ -311,7 +311,7 @@ class PPOAlgo(BaseAlgo):
                     surr2 = (value_clipped - sb.returnn).pow(2)
                     value_loss = torch.max(surr1, surr2).mean()
                     if self.useCVAR:
-                        loss = policy_loss - self.entropy_coef * entropy + self.value_loss_coef * value_loss - torch.sum(sb)
+                        loss = policy_loss - self.entropy_coef * entropy + self.value_loss_coef * value_loss - CVAR
                     else:
                         loss = policy_loss - self.entropy_coef * entropy + self.value_loss_coef * value_loss
 
