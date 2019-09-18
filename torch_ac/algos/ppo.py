@@ -286,8 +286,8 @@ class PPOAlgo(BaseAlgo):
                             CVAR=upsilon - torch.tensor(beta)
                         self.CVAR=CVAR
 
-                    if self.useCVAR and self.CVAR is not None:
-                        exps.returnn -= self.CVAR.item()
+                    #if self.useCVAR and self.CVAR is not None:
+                    #    exps.returnn -= self.CVAR.item()
 
                     sb = exps[inds + i]
 
