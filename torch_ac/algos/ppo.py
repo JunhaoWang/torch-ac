@@ -182,8 +182,6 @@ class PPOAlgo(BaseAlgo):
 
         exps.returnn = exps.value + exps.advantage
 
-        if self.useKL and self.KL_loss is not None:
-            exps.returnn += self.KL_loss.item()
 
         exps.log_prob = self.log_probs.transpose(0, 1).reshape(-1)
         #exps.traj_length=
@@ -291,6 +289,9 @@ class PPOAlgo(BaseAlgo):
                     if self.useCVAR and CVAR is not None:
                         exps.returnn -= CVAR.item()
 
+                    if self.useKL and self.KL_loss is not None:
+                        exps.returnn += self.KL_loss.item()
+
 
                     # Compute loss
 
@@ -348,7 +349,7 @@ class PPOAlgo(BaseAlgo):
                 batch_loss.backward()
                 grad_norm = sum(p.grad.data.norm(2).item() ** 2 for p in self.acmodel.parameters()) ** 0.5
 
-
+                print(grad_norm)
                 torch.nn.utils.clip_grad_norm_(self.acmodel.parameters(), self.max_grad_norm)
 
                 self.optimizer.step()
