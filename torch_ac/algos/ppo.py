@@ -266,7 +266,7 @@ class PPOAlgo(BaseAlgo):
                     if self.useCVAR:
                         device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
 
-                        beta=20
+                        beta=0.5
                         alpha=0.05
                         lam_CVAR=1
 
@@ -288,12 +288,12 @@ class PPOAlgo(BaseAlgo):
                         else:
                             CVAR=upsilon - torch.tensor(beta)
 
-                    print(exps.returnn)
-                    print(CVAR)
+                    print(exps.returnn.shape)
+                    print(CVAR.shape)
 
                     exps.returnn += CVAR
 
-                    print(exps.returnn)
+                    print(exps.returnn.shape)
 
 
                     # Compute loss
