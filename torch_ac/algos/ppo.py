@@ -264,7 +264,6 @@ class PPOAlgo(BaseAlgo):
                     if self.useCVAR:
                         device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
 
-                        beta=0.5
                         alpha=0.05
                         lam_CVAR=1
 
@@ -282,9 +281,9 @@ class PPOAlgo(BaseAlgo):
                         first_term=(lam_CVAR/(1-alpha))
 
                         if discounted_sum_reward >= upsilon:
-                            CVAR= upsilon + torch.tensor(first_term)* (discounted_sum_reward - upsilon) - torch.tensor(beta)
+                            CVAR= upsilon + torch.tensor(first_term)* (discounted_sum_reward - upsilon)
                         else:
-                            CVAR=upsilon - torch.tensor(beta)
+                            CVAR=0
 
                     if self.useCVAR and CVAR is not None:
                         exps.returnn -= CVAR.item()
