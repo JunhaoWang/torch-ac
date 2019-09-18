@@ -260,10 +260,6 @@ class PPOAlgo(BaseAlgo):
 
                     # Create a sub-batch of experience
 
-                    if self.acmodel.recurrent:
-                        dist, value, memory = self.acmodel(sb.obs, memory * sb.mask)
-                    else:
-                        dist, value = self.acmodel(sb.obs)
 
                     if self.useCVAR:
 
@@ -299,6 +295,11 @@ class PPOAlgo(BaseAlgo):
 
 
                     # Compute loss
+
+                    if self.acmodel.recurrent:
+                        dist, value, memory = self.acmodel(sb.obs, memory * sb.mask)
+                    else:
+                        dist, value = self.acmodel(sb.obs)
 
 
                     entropy = dist.entropy().mean()
