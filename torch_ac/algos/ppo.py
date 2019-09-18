@@ -273,7 +273,7 @@ class PPOAlgo(BaseAlgo):
                         alpha=0.05
                         lam_CVAR=1
 
-                        reward_episode = exps.advantage
+                        reward_episode = sb.advantage
                         discounted_sum_reward=0
 
                         for i in range(len(reward_episode)):
