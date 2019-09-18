@@ -262,6 +262,11 @@ class PPOAlgo(BaseAlgo):
 
                     sb = exps[inds + i]
 
+                    if self.acmodel.recurrent:
+                        dist, value, memory = self.acmodel(sb.obs, memory * sb.mask)
+                    else:
+                        dist, value = self.acmodel(sb.obs)
+
                     if self.useCVAR:
 
                         beta=0.5
@@ -290,10 +295,6 @@ class PPOAlgo(BaseAlgo):
 
                     # Compute loss
 
-                    if self.acmodel.recurrent:
-                        dist, value, memory = self.acmodel(sb.obs, memory * sb.mask)
-                    else:
-                        dist, value = self.acmodel(sb.obs)
 
                     entropy = dist.entropy().mean()
 
@@ -310,9 +311,9 @@ class PPOAlgo(BaseAlgo):
                     surr2 = (value_clipped - sb.returnn).pow(2)
                     value_loss = torch.max(surr1, surr2).mean()
                     if self.useCVAR:
-                        loss = policy_loss - self.entropy_coef * entropy + self.value_loss_coef * value_loss - CVAR
+                        loss = policy_loss - self.entropy_coef * entropy + self.value_loss_coef * value_loss - torch.sum(sb)
                     else:
-                        loss = policy_loss - self.entropy_coef * entropy + self.value_loss_coef * value_loss 
+                        loss = policy_loss - self.entropy_coef * entropy + self.value_loss_coef * value_loss
 
 
                     # Update batch valuesgit
