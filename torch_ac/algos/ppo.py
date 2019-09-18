@@ -185,6 +185,9 @@ class PPOAlgo(BaseAlgo):
         if self.useKL and self.KL_loss is not None:
             exps.returnn += self.KL_loss.item()
 
+        if self.useCVAR:
+            exps.returnn -= self.CVAR.item()
+
 
         exps.log_prob = self.log_probs.transpose(0, 1).reshape(-1)
         #exps.traj_length=
@@ -257,6 +260,7 @@ class PPOAlgo(BaseAlgo):
 
                             KLlist = KLlist + (KLTerm / klterms) ** 2
                         self.KL_loss =  self.KLweight * KLlist
+                        print(self.KL_loss)
 
                     # Create a sub-batch of experience
 
@@ -273,7 +277,7 @@ class PPOAlgo(BaseAlgo):
                         alpha=0.05
                         lam_CVAR=1
 
-                        reward_episode = sb.advantage
+                        reward_episode = exps.reward
                         discounted_sum_reward=0
 
                         for i in range(len(reward_episode)):
@@ -290,7 +294,7 @@ class PPOAlgo(BaseAlgo):
                             CVAR= upsilon + torch.tensor(first_term)* (discounted_sum_reward - upsilon) - torch.tensor(beta)
                         else:
                             CVAR=upsilon - torch.tensor(beta)
-                        print(CVAR)
+                        self.CVAR=CVAR
 
 
                     # Compute loss
@@ -311,7 +315,7 @@ class PPOAlgo(BaseAlgo):
                     surr2 = (value_clipped - sb.returnn).pow(2)
                     value_loss = torch.max(surr1, surr2).mean()
                     if self.useCVAR:
-                        loss = policy_loss - self.entropy_coef * entropy + self.value_loss_coef * value_loss - CVAR
+                        loss = policy_loss - self.entropy_coef * entropy + self.value_loss_coef * value_loss 
                     else:
                         loss = policy_loss - self.entropy_coef * entropy + self.value_loss_coef * value_loss
 
