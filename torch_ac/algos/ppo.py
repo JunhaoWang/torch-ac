@@ -184,8 +184,6 @@ class PPOAlgo(BaseAlgo):
 
         if self.useKL and self.KL_loss is not None:
             exps.returnn += self.KL_loss.item()
-        if self.useCVAR:
-            exps.returnn -= self.CVAR
 
         exps.log_prob = self.log_probs.transpose(0, 1).reshape(-1)
         #exps.traj_length=
@@ -263,6 +261,8 @@ class PPOAlgo(BaseAlgo):
 
                     sb = exps[inds + i]
 
+                    CVAR=None
+
                     if self.useCVAR:
                         device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
 
@@ -288,12 +288,8 @@ class PPOAlgo(BaseAlgo):
                         else:
                             CVAR=upsilon - torch.tensor(beta)
 
-                    print(exps.returnn.shape)
-                    print(CVAR.shape)
-
-                    exps.returnn += CVAR.item()
-
-                    print(exps.returnn.shape)
+                    if self.useCVAR and CVAR is not None:
+                        exps.returnn -= CVAR.item()
 
 
                     # Compute loss
@@ -352,7 +348,6 @@ class PPOAlgo(BaseAlgo):
                 batch_loss.backward()
                 grad_norm = sum(p.grad.data.norm(2).item() ** 2 for p in self.acmodel.parameters()) ** 0.5
 
-                print(grad_norm)
 
                 torch.nn.utils.clip_grad_norm_(self.acmodel.parameters(), self.max_grad_norm)
 
