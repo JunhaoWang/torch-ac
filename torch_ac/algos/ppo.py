@@ -288,8 +288,12 @@ class PPOAlgo(BaseAlgo):
                         else:
                             CVAR=upsilon - torch.tensor(beta)
 
-                        self.CVAR= CVAR
-                        print(self.CVAR)
+                    print(exps.returnn)
+                    print(CVAR)
+
+                    exps.returnn += CVAR
+
+                    print(exps.returnn)
 
 
                     # Compute loss
