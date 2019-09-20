@@ -182,6 +182,9 @@ class PPOAlgo(BaseAlgo):
 
         exps.returnn = exps.value + exps.advantage
 
+        if self.useKL and self.KL_loss is not None:
+            exps.returnn += self.KL_loss.item()
+
 
         exps.log_prob = self.log_probs.transpose(0, 1).reshape(-1)
         #exps.traj_length=
@@ -248,9 +251,9 @@ class PPOAlgo(BaseAlgo):
                                     torch.tensor(SSRepPolicy, requires_grad=True, device=device, dtype=torch.float))
                             else:
                                 KLTerm = self.KL(torch.log(
-                                    torch.tensor(self.SSRepDem, requires_grad=True, device=device, dtype=torch.float),
+                                    torch.tensor(self.SSRepDem, requires_grad=True, device=device, dtype=torch.float)),
                                     torch.tensor(SSRepPolicy, requires_grad=True, device=device,
-                                                 dtype=torch.float)))
+                                                 dtype=torch.float))
 
                             KLlist = KLlist + (KLTerm / klterms) ** 2
                         self.KL_loss =  self.KLweight * KLlist
@@ -287,9 +290,6 @@ class PPOAlgo(BaseAlgo):
 
                     if self.useCVAR and CVAR is not None:
                         exps.returnn -= CVAR.item()
-
-                    if self.useKL and self.KL_loss is not None:
-                        exps.returnn += self.KL_loss.item()
 
 
                     # Compute loss
