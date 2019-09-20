@@ -243,9 +243,9 @@ class PPOAlgo(BaseAlgo):
                         for i in range(klterms):
                             if klterms != 1:
                                 KLTerm = self.KL(
-                                    torch.log(torch.tensor(self.SSRepDem[i]), requires_grad=True, device=device,
+                                    torch.log(torch.tensor(self.SSRepDem[i], requires_grad=True, device=device,
                                               dtype=torch.float),
-                                    torch.tensor(SSRepPolicy, requires_grad=True, device=device, dtype=torch.float))
+                                    torch.tensor(SSRepPolicy, requires_grad=True, device=device, dtype=torch.float)))
                             else:
                                 KLTerm = self.KL(torch.log(
                                     torch.tensor(self.SSRepDem, requires_grad=True, device=device, dtype=torch.float)),
