@@ -182,8 +182,6 @@ class PPOAlgo(BaseAlgo):
 
         exps.returnn = exps.value + exps.advantage
 
-        if self.useKL and self.KL_loss is not None:
-            exps.returnn += self.KL_loss.item()
 
 
         exps.log_prob = self.log_probs.transpose(0, 1).reshape(-1)
@@ -260,7 +258,7 @@ class PPOAlgo(BaseAlgo):
 
                     # Create a sub-batch of experience
 
-                    sb = exps[inds + i]
+                    sb = exps[inds]
 
                     CVAR=None
 
@@ -290,6 +288,9 @@ class PPOAlgo(BaseAlgo):
 
                     if self.useCVAR and CVAR is not None:
                         exps.returnn -= CVAR.item()
+
+                    if self.useKL and self.KL_loss is not None:
+                        exps.returnn += self.KL_loss.item()
 
 
                     # Compute loss
