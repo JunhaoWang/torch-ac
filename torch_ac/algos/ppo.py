@@ -243,13 +243,17 @@ class PPOAlgo(BaseAlgo):
                         KLlist = torch.tensor(0, requires_grad=True, device=device, dtype=torch.float)
                         for i in range(klterms):
                             if klterms != 1:
+                                x=self.SSRepDem[i]
+                                x = [x + 1 for x in x]
                                 KLTerm = self.KL(
-                                    torch.log(torch.tensor(self.SSRepDem[i]+0.000000001, requires_grad=True, device=device,
-                                              dtype=torch.float)),
+                                    torch.log(torch.tensor(x), requires_grad=True, device=device,
+                                              dtype=torch.float),
                                     torch.tensor(SSRepPolicy, requires_grad=True, device=device, dtype=torch.float))
                             else:
+                                x = self.SSRepDem
+                                x = [x + 1 for x in x]
                                 KLTerm = self.KL(torch.log(
-                                    torch.tensor(self.SSRepDem+0.000000001, requires_grad=True, device=device, dtype=torch.float)),
+                                    torch.tensor(x, requires_grad=True, device=device, dtype=torch.float)),
                                     torch.tensor(SSRepPolicy, requires_grad=True, device=device,
                                                  dtype=torch.float))
 
